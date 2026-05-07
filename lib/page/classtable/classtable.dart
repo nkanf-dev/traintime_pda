@@ -8,18 +8,12 @@ import 'package:watermeter/page/classtable/classtable_state.dart';
 
 /// Intro of the classtable.
 class ClassTableWindow extends StatelessWidget {
-  final BuildContext parentContext;
   final BoxConstraints constraints;
-  const ClassTableWindow({
-    super.key,
-    required this.parentContext,
-    required this.constraints,
-  });
+  const ClassTableWindow({super.key, required this.constraints});
 
   @override
   Widget build(BuildContext context) {
     return ClassTableState(
-      parentContext: parentContext,
       constraints: constraints,
       controllers: ClassTableWidgetState(),
       child: const ClassTablePage(),

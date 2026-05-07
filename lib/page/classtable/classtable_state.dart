@@ -25,13 +25,11 @@ import 'package:watermeter/themes/color_seed.dart';
 /// Use a inheritedWidget to share the ClassTableWidgetState
 class ClassTableState extends InheritedWidget {
   final ClassTableWidgetState controllers;
-  final BuildContext parentContext;
   final BoxConstraints constraints;
 
   const ClassTableState({
     super.key,
     required super.child,
-    required this.parentContext,
     required this.controllers,
     required this.constraints,
   });

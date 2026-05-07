@@ -608,10 +608,7 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(FlutterI18n.translate(context, "classtable.page_title")),
-        leading: BackButton(
-          onPressed: () =>
-              Navigator.of(ClassTableState.of(context)!.parentContext).pop(),
-        ),
+        leading: BackButton(onPressed: () => Navigator.of(context).pop()),
         actions: [
           if (hasError)
             IconButton(
