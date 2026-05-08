@@ -295,6 +295,7 @@ electricity:
   water_usage_read_before: 上次讀數
   water_usage_read_now: 本次讀數
   water_usage: 洗澡水用量
+  not_school_network: 非校園網訪問
 empty_classroom:
   title: 空閒教室
   date: 日期 {date}

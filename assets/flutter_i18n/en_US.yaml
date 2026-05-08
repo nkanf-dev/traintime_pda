@@ -354,6 +354,7 @@ electricity:
    water_usage_read_before: "Last time"
    water_usage_read_now: "This time"
    water_usage: "Bath water usage"
+   not_school_network: "Not school network"
 
 # 空闲教室
 empty_classroom:

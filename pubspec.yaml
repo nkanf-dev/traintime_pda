@@ -13,7 +13,6 @@ dependencies:
   encrypter_plus: ^5.1.0
   talker_flutter: ^5.0.0
   talker_dio_logger: ^5.0.0
-  tflite_flutter: ^0.12.1
   synchronized: ^3.1.0+1
   pool: ^1.5.2
   # Stroage Cache

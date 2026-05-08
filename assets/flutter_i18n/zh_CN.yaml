@@ -323,6 +323,7 @@ electricity:
     water_usage_read_before: "上次读数"
     water_usage_read_now: "本次读数"
     water_usage: "洗澡水用量"
+    not_school_network: "非校园网访问"
 
 # 空闲教室
 empty_classroom:
