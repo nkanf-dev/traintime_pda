@@ -773,8 +773,7 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
                       if (Platform.isLinux ||
                           Platform.isMacOS ||
                           Platform.isWindows) {
-                        String?
-                        resultFilePath = await FilePicker.platform.saveFile(
+                        String? resultFilePath = await FilePicker.saveFile(
                           dialogTitle: FlutterI18n.translate(
                             context,
                             "classtable.partner_classtable.save_dialog.title",
