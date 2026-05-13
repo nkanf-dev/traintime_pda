@@ -10,6 +10,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
 
 /// Callback to fetch a new captcha image.
 /// Returns the image bytes.
@@ -75,7 +76,7 @@ class _ImageCaptchaWidgetState extends State<ImageCaptchaWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("输入验证码"),
+        title: Text(FlutterI18n.translate(context, "login.image_captcha.title")),
       ),
       body: Center(
         child: Column(
@@ -97,7 +98,7 @@ class _ImageCaptchaWidgetState extends State<ImageCaptchaWidget> {
             ),
             const SizedBox(height: 4),
             Text(
-              "点击图片刷新",
+              FlutterI18n.translate(context, "login.image_captcha.refresh_hint"),
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.outline,
@@ -110,8 +111,8 @@ class _ImageCaptchaWidgetState extends State<ImageCaptchaWidget> {
                 controller: _controller,
                 textAlign: TextAlign.center,
                 maxLength: 4,
-                decoration: const InputDecoration(
-                  hintText: "输入验证码",
+                decoration: InputDecoration(
+                  hintText: FlutterI18n.translate(context, "login.image_captcha.hint"),
                   counterText: "",
                 ),
                 onSubmitted: (_) => _submit(),
@@ -120,7 +121,7 @@ class _ImageCaptchaWidgetState extends State<ImageCaptchaWidget> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _loading ? null : _submit,
-              child: const Text("确认"),
+              child: Text(FlutterI18n.translate(context, "login.image_captcha.confirm")),
             ),
           ],
         ),

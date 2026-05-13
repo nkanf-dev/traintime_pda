@@ -281,7 +281,7 @@ class FidoSession extends IDSSession {
     final execution = executionInput?.attributes['value'] ?? '';
 
     if (execution.isEmpty) {
-      throw const LoginFailedException(msg: "无法获取 execution token");
+      throw const FidoException("无法获取 execution token");
     }
 
     // 2. startAssertion
@@ -391,12 +391,10 @@ class FidoSession extends IDSSession {
       final errPage = html_parser.parse(loginResp.data);
       final errSpan = errPage.querySelector('span#showErrorTip');
       final errMsg = errSpan?.text ?? "FIDO 登录失败";
-      throw LoginFailedException(msg: errMsg);
+      throw FidoException(errMsg);
     }
 
-    throw LoginFailedException(
-      msg: "FIDO 登录失败，状态码: ${loginResp.statusCode}",
-    );
+    throw FidoException("FIDO 登录失败，状态码: ${loginResp.statusCode}");
   }
 
   // ---------------------------------------------------------------------------

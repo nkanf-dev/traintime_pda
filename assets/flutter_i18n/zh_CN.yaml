@@ -36,6 +36,17 @@ login_process:
     slider: "滑块验证"
     after_process: "登录后处理"
     failed: "登录失败，响应状态码：{statusCode}"
+    image_captcha:
+        title: "输入验证码"
+        refresh_hint: "点击图片刷新"
+        hint: "输入验证码"
+        confirm: "确认"
+fido_process:
+    prepare: "准备 FIDO 登录"
+    start_assertion: "获取认证请求"
+    signing: "签名中"
+    submitting: "提交认证"
+    done: "登录完成"
 # TODO: ehall_exam_session data
 
 no_info: "没有信息"
@@ -991,6 +1002,7 @@ setting:
         english: "英语"
     semester_change: 修改学期
     semester_change_description: 使用学期 {semester}
+    updating_data: "正在更新数据"
     semester_update_data: "应用新学期设置中"
     # 关于页面
     easter_egg_page: "你找到了彩蛋"

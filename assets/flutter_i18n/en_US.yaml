@@ -42,6 +42,17 @@ login_process:
    slider: "Solving slider captcha"
    after_process: "Post-login processing"
    failed: "Login failed, response status code: {statusCode}"
+   image_captcha:
+      title: "Enter Captcha"
+      refresh_hint: "Tap image to refresh"
+      hint: "Enter captcha"
+      confirm: "Confirm"
+fido_process:
+   prepare: "Preparing FIDO login"
+   start_assertion: "Requesting assertion"
+   signing: "Signing"
+   submitting: "Submitting"
+   done: "Login complete"
 # TODO: ehall_exam_session data
 
 no_info: "No information"
@@ -1041,6 +1052,7 @@ setting:
       english: "English"
    semester_change: Change semester
    semester_change_description: Using semester {semester}
+   updating_data: "Updating data"
    semester_update_data: "Applying new semester setting"
    # 关于页面
    easter_egg_page: "You found an Easter egg"

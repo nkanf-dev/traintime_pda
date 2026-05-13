@@ -26,6 +26,17 @@ login_process:
   slider: 滑塊驗證
   after_process: 登錄後處理
   failed: 登錄失敗，響應狀態碼：{statusCode}
+  image_captcha:
+    title: 輸入驗證碼
+    refresh_hint: 點擊圖片刷新
+    hint: 輸入驗證碼
+    confirm: 確認
+fido_process:
+  prepare: 準備 FIDO 登錄
+  start_assertion: 獲取認證請求
+  signing: 簽名中
+  submitting: 提交認證
+  done: 登錄完成
 no_info: 沒有信息
 catcher_detected: 發生錯誤
 catcher_description: 詳情如下
@@ -930,6 +941,7 @@ setting:
     english: 英語
   semester_change: 修改學期
   semester_change_description: 使用學期 {semester}
+  updating_data: 正在更新數據
   semester_update_data: 應用新學期設置中
   easter_egg_page: 你找到了彩蛋
   about_page:

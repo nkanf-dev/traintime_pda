@@ -279,7 +279,7 @@ class _LoginWindowState extends State<LoginWindow> {
         target:
             "https://ehall.xidian.edu.cn:443/login?service=https://ehall.xidian.edu.cn/new/index.html",
         onResponse: (int number, String status) => pd.update(
-          msg: status,
+          msg: FlutterI18n.translate(context, status),
           value: number,
         ),
       );
