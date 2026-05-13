@@ -89,28 +89,28 @@ class FidoSession extends IDSSession {
     final startData = startResp.data;
     if (startData is! Map || startData["code"].toString() != "0") {
       throw FidoException(
-        "startRegister 失败: ${startData is Map ? startData["message"] : "响应异常"}",
+        "startRegister failed: ${startData is Map ? startData["message"] : "response error"}",
       );
     }
     final datas = startData["datas"];
     if (datas is! Map) {
-      throw const FidoException("startRegister datas 异常");
+      throw const FidoException("startRegister datas error");
     }
     final request = datas["request"];
     if (request is! Map) {
-      throw const FidoException("startRegister request 异常");
+      throw const FidoException("startRegister request error");
     }
     final requestId = request["requestId"];
     final pkcco = request["publicKeyCredentialCreationOptions"];
     if (pkcco is! Map) {
-      throw const FidoException("startRegister publicKeyCredentialCreationOptions 异常");
+      throw const FidoException("startRegister publicKeyCredentialCreationOptions error");
     }
     final challenge = pkcco["challenge"];
     final rpInfo = pkcco["rp"];
     final userInfo = pkcco["user"];
 
     if (challenge == null || challenge.isEmpty) {
-      throw const FidoException("未获取到 challenge");
+      throw const FidoException("challenge not obtained");
     }
 
     // 2. Generate P-256 key pair
@@ -201,22 +201,22 @@ class FidoSession extends IDSSession {
 
     final finishData = finishResp.data;
     if (finishData is! Map) {
-      throw const FidoException("finishRegister 返回数据异常");
+      throw const FidoException("finishRegister response error");
     }
     final code = finishData["code"];
     if (code.toString() != "0") {
       throw FidoException(
-        "注册失败: ${finishData["message"] ?? "未知错误"}",
+        "Registration failed: ${finishData["message"] ?? "unknown error"}",
       );
     }
 
     final finishDatas = finishData["datas"];
     if (finishDatas is! Map) {
-      throw const FidoException("finishRegister datas 异常");
+      throw const FidoException("finishRegister datas error");
     }
     final anonbiometricsd = finishDatas["anonbiometricsd"];
     if (anonbiometricsd == null || anonbiometricsd.toString().isEmpty) {
-      throw const FidoException("未获取到 anonbiometricsd");
+      throw const FidoException("anonbiometricsd not obtained");
     }
 
     // 5. Save credentials
@@ -281,7 +281,7 @@ class FidoSession extends IDSSession {
     final execution = executionInput?.attributes['value'] ?? '';
 
     if (execution.isEmpty) {
-      throw const FidoException("无法获取 execution token");
+      throw const FidoException("Failed to obtain execution token");
     }
 
     // 2. startAssertion
@@ -312,25 +312,25 @@ class FidoSession extends IDSSession {
 
     final assertData = assertResp.data;
     if (assertData is! Map) {
-      throw const FidoException("startAssertion 返回数据异常");
+      throw const FidoException("startAssertion response error");
     }
     final result = assertData["result"];
     if (result is! Map) {
-      throw const FidoException("startAssertion result 异常");
+      throw const FidoException("startAssertion result error");
     }
     final reqData = result["request"];
     if (reqData is! Map) {
-      throw const FidoException("startAssertion request 异常");
+      throw const FidoException("startAssertion request error");
     }
     final requestId = reqData["requestId"];
     final pkro = reqData["publicKeyCredentialRequestOptions"];
     if (pkro is! Map) {
-      throw const FidoException("startAssertion publicKeyCredentialRequestOptions 异常");
+      throw const FidoException("startAssertion publicKeyCredentialRequestOptions error");
     }
     final challenge = pkro["challenge"];
 
     if (challenge == null || challenge.isEmpty) {
-      throw const FidoException("未获取到 assertion challenge");
+      throw const FidoException("assertion challenge not obtained");
     }
 
     // 3. Generate signature
@@ -390,11 +390,11 @@ class FidoSession extends IDSSession {
     if (loginResp.statusCode == 200) {
       final errPage = html_parser.parse(loginResp.data);
       final errSpan = errPage.querySelector('span#showErrorTip');
-      final errMsg = errSpan?.text ?? "FIDO 登录失败";
+      final errMsg = errSpan?.text ?? "FIDO login failed";
       throw FidoException(errMsg);
     }
 
-    throw FidoException("FIDO 登录失败，状态码: ${loginResp.statusCode}");
+    throw FidoException("FIDO login failed, status: ${loginResp.statusCode}");
   }
 
   // ---------------------------------------------------------------------------

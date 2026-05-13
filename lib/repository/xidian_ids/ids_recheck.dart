@@ -138,16 +138,16 @@ class IdsRecheck extends IDSSession {
 
     final data = resp.data;
     if (data is! Map) {
-      throw RecheckFailedException("响应格式异常");
+      throw RecheckFailedException("Unexpected response format");
     }
     final code = data["code"];
     if (code.toString() != "0") {
-      final msg = data["message"] ?? "验证失败";
+      final msg = data["message"] ?? "Verification failed";
       throw RecheckFailedException(msg);
     }
     final datas = data["datas"];
     if (datas is! Map) {
-      throw RecheckFailedException("验证响应数据异常");
+      throw RecheckFailedException("Unexpected response data");
     }
     return datas["sign"];
   }
@@ -198,7 +198,7 @@ class IdsRecheck extends IDSSession {
     final data = resp.data;
     if (data is! Map || data["code"].toString() != "0") {
       throw RecheckFailedException(
-        "删除设备失败: ${data is Map ? data["message"] : "响应格式异常"}",
+        "Delete device failed: ${data is Map ? data["message"] : "unexpected response format"}",
       );
     }
   }
