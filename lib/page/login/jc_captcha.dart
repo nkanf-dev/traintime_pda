@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:watermeter/repository/logger.dart';
+import 'package:watermeter/repository/xidian_ids/ids_crypto.dart';
 
 class Lazy<T> {
   final T Function() _initializer;
@@ -76,8 +77,10 @@ class SliderCaptchaClientProvider {
     return encrypted.base64;
   }
 
+
   /// 解密逻辑
   static String decryptData(String cipherText, Uint8List keyBytes) {
+    const blockSize = 16;
     final Uint8List fullCipher = base64.decode(cipherText);
 
     if (fullCipher.length < _blockSize * 4) {
@@ -252,27 +255,12 @@ class SliderCaptchaClientProvider {
   }
 
   String _encryptPayload(String payload) {
-    if (pieceData == null || pieceData!.length < _captchaKeySize) {
+    if (pieceData == null || pieceData!.length < _keySize) {
       throw StateError("Captcha image is too short to contain AES key.");
     }
 
-    final keyBytes = pieceData!.sublist(pieceData!.length - _captchaKeySize);
-    final key = encrypt.Key(Uint8List.fromList(keyBytes));
-    final iv = encrypt.IV.fromUtf8(_randomString(_blockSize));
-    final nonce = _randomString(_blockSize * 4);
-    final aes = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
-
-    final plain = "$nonce$payload";
-    return aes.encrypt(plain, iv: iv).base64;
-  }
-
-  static String _randomString(int length) {
-    return String.fromCharCodes(
-      List.generate(
-        length,
-        (_) => _aesChars.codeUnitAt(_random.nextInt(_aesChars.length)),
-      ),
-    );
+    final keyBytes = pieceData!.sublist(pieceData!.length - _keySize);
+    return IdsCrypto.encryptPassword(payload, Uint8List.fromList(keyBytes));
   }
 }
 
