@@ -40,6 +40,7 @@ class TrackPoint {
 class SliderCaptchaClientProvider {
   static const int _blockSize = 16;
   static const int _captchaKeySize = 16;
+  static const int _keySize = 16;
   static const String _aesChars =
       "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";
   static final Random _random = Random.secure();
@@ -47,24 +48,19 @@ class SliderCaptchaClientProvider {
   final String cookie;
   Dio dio = Dio()..interceptors.add(logDioAdapter);
 
-  static const int blockSize = 16;
-  static const int keySize = 16;
-  static const String aesChars =
-      "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";
-
   /// 生成指定长度的随机字符串
   static String randomString(int n) {
     final random = Random();
     return List.generate(
       n,
-      (index) => aesChars[random.nextInt(aesChars.length)],
+      (index) => _aesChars[random.nextInt(_aesChars.length)],
     ).join();
   }
 
   /// 加密逻辑
   static String encryptData(String plainText, Uint8List keyBytes) {
-    final ivStr = randomString(blockSize);
-    final nonce = randomString(blockSize * 4);
+    final ivStr = randomString(_blockSize);
+    final nonce = randomString(_blockSize * 4);
     final plain = nonce + plainText;
 
     final key = encrypt.Key(keyBytes);
@@ -84,14 +80,14 @@ class SliderCaptchaClientProvider {
   static String decryptData(String cipherText, Uint8List keyBytes) {
     final Uint8List fullCipher = base64.decode(cipherText);
 
-    if (fullCipher.length < blockSize * 4) {
+    if (fullCipher.length < _blockSize * 4) {
       throw Exception("Cipher text is too short to contain nonce.");
     }
 
     // 根据 Python 逻辑：IV 是密文的第 48-64 字节 (Block 4)
     // 实际密文从第 64 字节开始
-    final ivBytes = fullCipher.sublist(blockSize * 3, blockSize * 4);
-    final encryptedPayload = fullCipher.sublist(blockSize * 4);
+    final ivBytes = fullCipher.sublist(_blockSize * 3, _blockSize * 4);
+    final encryptedPayload = fullCipher.sublist(_blockSize * 4);
 
     final key = encrypt.Key(keyBytes);
     final iv = encrypt.IV(ivBytes);
@@ -111,10 +107,10 @@ class SliderCaptchaClientProvider {
 
   /// 从图片字节数组末尾提取 AES Key
   static Uint8List extractAesKeyFromImage(Uint8List imageBytes) {
-    if (imageBytes.length < keySize) {
+    if (imageBytes.length < _keySize) {
       throw Exception("Image is too short to contain AES key.");
     }
-    return imageBytes.sublist(imageBytes.length - keySize);
+    return imageBytes.sublist(imageBytes.length - _keySize);
   }
 
   /// 优化后的轨迹生成函数
@@ -221,8 +217,8 @@ class SliderCaptchaClientProvider {
     throw CaptchaSolveFailedException();
   }
 
-  Future<bool> verifyWithTracks(List<Map<String, int>> tracks) async {
-    final moveLength = tracks.isNotEmpty ? tracks.last["a"] ?? 0 : 0;
+  Future<bool> verifyWithTracks(List<TrackPoint> tracks) async {
+    final moveLength = tracks.isNotEmpty ? tracks.last.a : 0;
     final payload = jsonEncode({
       "canvasLength": puzzleWidth.toInt(),
       "moveLength": moveLength,
@@ -297,7 +293,7 @@ class _CaptchaWidgetState extends State<CaptchaWidget> {
 
   late Future<SliderCaptchaClientProvider> _providerFuture;
 
-  final List<Map<String, int>> _tracks = [];
+  final List<TrackPoint> _tracks = [];
   DateTime? _lastRecordTime;
   Offset? _dragStartGlobal;
   int? _activePointer;
@@ -357,7 +353,7 @@ class _CaptchaWidgetState extends State<CaptchaWidget> {
     _lastTrackA = null;
     _lastTrackB = null;
     _tracks.clear();
-    _tracks.add({"a": 0, "b": 0, "c": 0});
+    _tracks.add(TrackPoint(0, 0, 0));
     if (_statusText != null) {
       setState(() => _statusText = null);
     }
@@ -390,7 +386,7 @@ class _CaptchaWidgetState extends State<CaptchaWidget> {
       if (distanceSquared < _recordDistancePx * _recordDistancePx) return;
     }
 
-    _tracks.add({"a": a, "b": b, "c": elapsed});
+    _tracks.add(TrackPoint(a, b, elapsed));
     _lastTrackA = a;
     _lastTrackB = b;
     _lastRecordTime = now;
@@ -423,7 +419,7 @@ class _CaptchaWidgetState extends State<CaptchaWidget> {
 
     final dy = globalPosition.dy - start.dy;
     final elapsed = DateTime.now().difference(lastTime).inMilliseconds;
-    _tracks.add({"a": dx.round(), "b": dy.round(), "c": elapsed});
+    _tracks.add(TrackPoint(dx.round(), dy.round(), elapsed));
     log.info("Recorded ${_tracks.length} real slider track points.");
 
     setState(() {
@@ -568,7 +564,7 @@ class _CaptchaWidgetState extends State<CaptchaWidget> {
               child: IconButton(
                 onPressed: () {
                   setState(() {
-                    updateProvider(statusText: "再试一次");
+                    updateProvider(statusText: "Try Again");
                   });
                 },
                 icon: const Icon(Icons.refresh),
