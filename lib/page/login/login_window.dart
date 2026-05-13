@@ -294,11 +294,6 @@ class _LoginWindowState extends State<LoginWindow> {
       loginState = IDSLoginState.success;
 
       if (!mounted) return;
-      preference.setString(
-        preference.Preference.idsAccount,
-        _idsAccountController.text,
-      );
-
       bool isPostGraduate = await ses.checkWhetherPostgraduate();
       String semesterInfo = isPostGraduate
           ? await PersonalInfoSession().getSemesterInfoYjspt()
