@@ -16,6 +16,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:pointycastle/export.dart';
+import 'package:pointycastle/asn1.dart';
 import 'package:watermeter/repository/logger.dart';
 import 'package:watermeter/repository/preference.dart' as preference;
 import 'package:watermeter/repository/xidian_ids/ids_session.dart';
@@ -416,8 +417,35 @@ class FidoSession extends IDSSession {
     final privateKey = keyPair.privateKey;
     final publicKey = keyPair.publicKey;
 
-    // Export private key as PKCS#8 PEM
-    final privateKeyPem = _exportPrivateKeyPem(privateKey, publicKey);
+    // Export private key as PKCS#8 PEM using PointyCastle ASN1
+    final ecPoint = publicKey.Q!;
+    final pubX = _bigIntToBytes(ecPoint.x!.toBigInteger()!, 32);
+    final pubY = _bigIntToBytes(ecPoint.y!.toBigInteger()!, 32);
+    final uncompressedPub = Uint8List.fromList([0x04, ...pubX, ...pubY]);
+
+    final innerSeq = ASN1Sequence(elements: [
+      ASN1Integer(BigInt.from(1)),
+      ASN1OctetString(octets: _bigIntToBytes(privateKey.d!, 32)),
+      ASN1BitString(
+          stringValues: uncompressedPub, tag: 0xA1),
+    ]);
+
+    final algorithmSeq = ASN1Sequence(elements: [
+      ASN1ObjectIdentifier([1, 2, 840, 10045, 2, 1]),
+      ASN1ObjectIdentifier([1, 2, 840, 10045, 3, 1, 7]),
+    ]);
+
+    final pkcs8Seq = ASN1Sequence(elements: [
+      ASN1Integer(BigInt.zero),
+      algorithmSeq,
+      ASN1OctetString(octets: innerSeq.encode()),
+    ]);
+
+    final b64 = base64.encode(pkcs8Seq.encode());
+    final pemLines =
+        RegExp(r'.{1,64}').allMatches(b64).map((m) => m.group(0));
+    final privateKeyPem =
+        "-----BEGIN PRIVATE KEY-----\n${pemLines.join("\n")}\n-----END PRIVATE KEY-----";
 
     return _KeyPairResult(
       privateKey: privateKey,
@@ -480,7 +508,8 @@ class FidoSession extends IDSSession {
     required String privateKeyPem,
     required String userHandle,
   }) {
-    final privateKey = _loadPrivateKeyFromPem(privateKeyPem);
+    final derBytes = ASN1Utils.getBytesFromPEMString(privateKeyPem);
+    final privateKey = ASN1Utils.ecPrivateKeyFromDerBytes(derBytes, pkcs8: true);
 
     // clientDataJSON
     final clientData = utf8.encode(jsonEncode({
@@ -528,140 +557,22 @@ class FidoSession extends IDSSession {
   }
 
   // ---------------------------------------------------------------------------
-  // PEM / DER Helpers
+  // Signature DER Encoding
   // ---------------------------------------------------------------------------
 
-  String _exportPrivateKeyPem(ECPrivateKey privateKey, ECPublicKey publicKey) {
-    final d = _bigIntToBytes(privateKey.d!, 32);
-
-    // PKCS#8 PrivateKeyInfo DER encoding for EC P-256
-    final ecPoint = publicKey.Q!;
-    final pubX = _bigIntToBytes(ecPoint.x!.toBigInteger()!, 32);
-    final pubY = _bigIntToBytes(ecPoint.y!.toBigInteger()!, 32);
-    final uncompressedPub = Uint8List.fromList([0x04, ...pubX, ...pubY]);
-
-    final innerSeq = _derSequence([
-      _derInteger(BigInt.from(1)),
-      _derOctetString(d),
-      _derBitString(uncompressedPub, tag: 0xA1),
-    ]);
-
-    final algorithmSeq = _derSequence([
-      _derOid([1, 2, 840, 10045, 2, 1]),
-      _derOid([1, 2, 840, 10045, 3, 1, 7]),
-    ]);
-
-    final pkcs8Seq = _derSequence([
-      _derInteger(BigInt.zero),
-      algorithmSeq,
-      _derOctetString(innerSeq),
-    ]);
-
-    final b64 = base64.encode(pkcs8Seq);
-    final pemLines = RegExp(r'.{1,64}').allMatches(b64).map((m) => m.group(0));
-    return "-----BEGIN PRIVATE KEY-----\n${pemLines.join("\n")}\n-----END PRIVATE KEY-----";
-  }
-
-  ECPrivateKey _loadPrivateKeyFromPem(String pem) {
-    final b64 = pem
-        .replaceAll("-----BEGIN PRIVATE KEY-----", "")
-        .replaceAll("-----END PRIVATE KEY-----", "")
-        .replaceAll(RegExp(r'\s+'), "");
-    final der = base64.decode(b64);
-
-    // Extract the private key integer 'd' from PKCS#8 DER.
-    final dBytes = _extractPrivateKeyD(der);
-    final d = _bytesToBigInt(dBytes);
-
-    final domainParams = ECDomainParameters("secp256r1");
-    return ECPrivateKey(d, domainParams);
-  }
-
-  Uint8List _extractPrivateKeyD(Uint8List pkcs8Der) {
-    // Navigate the DER structure to find the private key octet string.
-    // After the outer SEQUENCE, skip: version INT (5 bytes), algorithm SEQ (~18 bytes),
-    // then the private key OCTET STRING wraps an inner SEQUENCE with: version INT, OCT(d).
-    // We search for the pattern: 0x04, 0x20 (OCTET STRING, 32 bytes) after 0x02, 0x01, 0x00 (INT 1).
-    for (int i = 0; i < pkcs8Der.length - 34; i++) {
-      // Look for inner SEQUENCE start containing INT 1 then OCTET STRING(32)
-      if (pkcs8Der[i] == 0x02 &&
-          pkcs8Der[i + 1] == 0x01 &&
-          pkcs8Der[i + 2] == 0x01 &&
-          pkcs8Der[i + 3] == 0x04 &&
-          pkcs8Der[i + 4] == 0x20) {
-        return pkcs8Der.sublist(i + 5, i + 5 + 32);
-      }
-    }
-    throw const FidoException("Failed to extract private key from PEM");
-  }
-
   Uint8List _encodeDerSignature(BigInt r, BigInt s) {
-    return _derSequence([
-      _derIntegerRaw(_bigIntToBytes(r, 32)),
-      _derIntegerRaw(_bigIntToBytes(s, 32)),
-    ]);
-  }
-
-  Uint8List _derSequence(List<Uint8List> items) {
-    final content = Uint8List.fromList(items.expand((i) => i).toList());
-    return _derTlv(0x30, content);
-  }
-
-  Uint8List _derInteger(BigInt value) {
-    final bytes = _bigIntToBytes(value, (value.bitLength + 7) ~/ 8 + 1);
-    return _derTlv(0x02, bytes);
-  }
-
-  Uint8List _derIntegerRaw(Uint8List value) {
-    // Add leading zero if high bit is set
-    Uint8List adjusted;
-    if (value.isNotEmpty && (value[0] & 0x80) != 0) {
-      adjusted = Uint8List.fromList([0x00, ...value]);
-    } else {
-      adjusted = value;
+    List<int> encodeInt(BigInt value) {
+      var bytes = _bigIntToBytes(value, 32);
+      if (bytes[0] & 0x80 != 0) {
+        bytes = Uint8List.fromList([0x00, ...bytes]);
+      }
+      return [0x02, bytes.length, ...bytes];
     }
-    return _derTlv(0x02, adjusted);
-  }
 
-  Uint8List _derOctetString(Uint8List value) {
-    return _derTlv(0x04, value);
-  }
-
-  Uint8List _derBitString(Uint8List value, {int tag = 0x03}) {
-    final content = Uint8List.fromList([0x00, ...value]);
-    return _derTlv(tag, content);
-  }
-
-  Uint8List _derOid(List<int> components) {
-    final bytes = <int>[
-      components[0] * 40 + components[1],
-      for (int i = 2; i < components.length; i++) ..._encodeOidComponent(components[i]),
-    ];
-    return _derTlv(0x06, Uint8List.fromList(bytes));
-  }
-
-  List<int> _encodeOidComponent(int value) {
-    if (value < 0x80) return [value];
-    final result = <int>[];
-    int v = value;
-    result.add(v & 0x7F);
-    v >>= 7;
-    while (v > 0) {
-      result.add((v & 0x7F) | 0x80);
-      v >>= 7;
-    }
-    return result.reversed.toList();
-  }
-
-  Uint8List _derTlv(int tag, Uint8List value) {
-    final lengthBytes = _derLength(value.length);
-    return Uint8List.fromList([tag, ...lengthBytes, ...value]);
-  }
-
-  List<int> _derLength(int length) {
-    if (length < 0x80) return [length];
-    if (length < 0x100) return [0x81, length];
-    return [0x82, (length >> 8) & 0xFF, length & 0xFF];
+    final rEnc = encodeInt(r);
+    final sEnc = encodeInt(s);
+    final content = [...rEnc, ...sEnc];
+    return Uint8List.fromList([0x30, content.length, ...content]);
   }
 
   // ---------------------------------------------------------------------------
@@ -690,9 +601,6 @@ class FidoSession extends IDSSession {
     ));
   }
 
-  BigInt _bytesToBigInt(Uint8List bytes) {
-    return BigInt.parse(bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(), radix: 16);
-  }
 }
 
 class _KeyPairResult {
