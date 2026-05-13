@@ -120,7 +120,7 @@ class IDSSession extends NetworkSession {
       );
       var data = await dioNoOfflineCheck.get(
         "https://ids.xidian.edu.cn/authserver/login",
-        queryParameters: {'type': 'userNameLogin', 'service': target},
+        queryParameters: {'service': target},
       );
       log.info(
         "[IDSSession][checkAndLogin] "
@@ -183,14 +183,10 @@ class IDSSession extends NetworkSession {
         "Ready to get the login webpage.",
       );
     }
-    final loginQueryParameters = <String, String>{'type': 'userNameLogin'};
-    if (target != null) {
-      loginQueryParameters['service'] = target;
-    }
     var response = await dioNoOfflineCheck
         .get(
           "https://ids.xidian.edu.cn/authserver/login",
-          queryParameters: loginQueryParameters,
+          queryParameters: target != null ? {'service': target} : null,
         )
         .then((value) => value.data);
 
