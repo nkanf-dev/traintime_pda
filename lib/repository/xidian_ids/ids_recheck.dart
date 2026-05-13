@@ -60,7 +60,7 @@ class IdsRecheck extends IDSSession {
         return data["datas"]["necessary"] == true;
       }
     }
-    return false;
+    return true;
   }
 
   /// Get available recheck approach.

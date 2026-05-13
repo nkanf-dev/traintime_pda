@@ -24,6 +24,8 @@ const _rpId = "ids.xidian.edu.cn";
 const _origin = "https://ids.xidian.edu.cn";
 
 class FidoSession extends IDSSession {
+  static final _secureRandom = Random.secure();
+
   // ---------------------------------------------------------------------------
   // Registration
   // ---------------------------------------------------------------------------
@@ -668,7 +670,7 @@ class FidoSession extends IDSSession {
 
   Uint8List _randomBytes(int length) {
     return Uint8List.fromList(
-      List.generate(length, (_) => Random.secure().nextInt(256)),
+      List.generate(length, (_) => _secureRandom.nextInt(256)),
     );
   }
 
