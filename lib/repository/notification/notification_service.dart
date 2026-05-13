@@ -66,6 +66,7 @@ abstract class NotificationService {
           InitializationSettings(
         android: initializationSettingsAndroid,
         iOS: initializationSettingsDarwin,
+        macOS: initializationSettingsDarwin,
       );
 
       await flutterLocalNotificationsPlugin.initialize(
@@ -145,9 +146,10 @@ abstract class NotificationService {
               UILocalNotificationDateInterpretation.absoluteTime,
           payload: payload,
         );
-      } else if (Platform.isIOS) {
+      } else if (Platform.isIOS || Platform.isMacOS) {
         final notificationDetails = NotificationDetails(
-          iOS: darwinNotificationDetails,
+          iOS: Platform.isIOS ? darwinNotificationDetails : null,
+          macOS: Platform.isMacOS ? darwinNotificationDetails : null,
         );
 
         await flutterLocalNotificationsPlugin.zonedSchedule(
@@ -203,9 +205,10 @@ abstract class NotificationService {
           notificationDetails,
           payload: payload,
         );
-      } else if (Platform.isIOS) {
+      } else if (Platform.isIOS || Platform.isMacOS) {
         final notificationDetails = NotificationDetails(
-          iOS: darwinNotificationDetails,
+          iOS: Platform.isIOS ? darwinNotificationDetails : null,
+          macOS: Platform.isMacOS ? darwinNotificationDetails : null,
         );
 
         await flutterLocalNotificationsPlugin.show(
@@ -243,6 +246,14 @@ abstract class NotificationService {
             badge: true,
             sound: true,
           );
+    } else if (Platform.isMacOS) {
+      result = await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<MacOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
     } else {
       return false;
     }
@@ -262,10 +273,17 @@ abstract class NotificationService {
       final iosPlugin = flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
       if (iosPlugin == null) return false;
-      
+
       // Request permissions returns true if any permission is granted
       // This doesn't show a prompt if the user has already responded
       final result = await iosPlugin.checkPermissions();
+      if (result == null) return false;
+      return result.isEnabled;
+    } else if (Platform.isMacOS) {
+      final macosPlugin = flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<MacOSFlutterLocalNotificationsPlugin>();
+      if (macosPlugin == null) return false;
+      final result = await macosPlugin.checkPermissions();
       if (result == null) return false;
       return result.isEnabled;
     } else {
@@ -357,6 +375,8 @@ abstract class NotificationService {
 
   /// Opens the app's notification settings page.
   Future<void> openNotificationSettings() async {
-    await openAppSettings();
+    if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
+      await openAppSettings();
+    }
   }
 }
